@@ -1,0 +1,55 @@
+DROP DATABASE IF EXISTS Domashka6;
+CREATE DATABASE Domashka6;
+USE Domashka6;
+
+-- 1.Создайте функцию, которая принимает кол-во сек и формат их в кол-во дней часов.
+-- Пример: 123456 ->'1 days 10 hours 17 minutes 36 seconds '
+
+DROP FUNCTION IF EXISTS reformat_seconds;
+DELIMITER //
+CREATE FUNCTION reformat_seconds(sec INT)
+	RETURNS VARCHAR(250) DETERMINISTIC
+	BEGIN
+		DECLARE days INT;
+		DECLARE hours INT;
+		DECLARE minutes INT;
+		DECLARE seconds INT;
+		SET days = FLOOR(sec / (24 * 3600));
+		SET hours = FLOOR((sec - days * 24 * 3600) / 3600);
+		SET minutes = FLOOR((sec - days * 24 * 3600 - hours * 3600) / 60);
+		SET seconds = FLOOR((sec - days * 24 * 3600 - hours * 3600 - minutes * 60));
+		RETURN CONCAT(days, ' days ', hours, ' hours ', minutes, ' minutes ', seconds, ' seconds');
+	END //
+DELIMITER ;
+SELECT reformat_seconds(123456);
+
+
+-- 2.Выведите только числа, делящиеся на 15 или 33 в промежутке от 1 до 1000.
+-- Пример: 15,30,33,45...
+
+DROP PROCEDURE IF EXISTS divisible_15_33;
+DELIMITER //
+CREATE PROCEDURE divisible_15_33(IN left_border INT, IN right_border INT)
+	BEGIN
+    DECLARE quotient_15 INT;
+	DECLARE quotient_33 INT;
+    SET quotient_15 = CEILING(left_border / 15);
+    SET quotient_33 = CEILING(left_border / 33);
+    DROP TEMPORARY TABLE IF EXISTS divisible;
+    CREATE TEMPORARY TABLE divisible (
+		id SERIAL PRIMARY KEY,
+        divisible_numbers INT
+	);
+    WHILE (quotient_15 * 15) <= right_border DO
+		INSERT INTO divisible (divisible_numbers) VALUES (quotient_15 * 15);
+        SET quotient_15 = quotient_15 + 1;
+    END WHILE;
+    WHILE (quotient_33 * 33) <= right_border DO
+		INSERT INTO divisible (divisible_numbers) VALUES (quotient_33 * 33);
+        SET quotient_33 = quotient_33 + 1;
+    END WHILE;
+	SELECT GROUP_CONCAT(DISTINCT divisible_numbers ORDER BY divisible_numbers) AS divisible_numbers FROM divisible;
+    SELECT DISTINCT divisible_numbers FROM divisible ORDER BY divisible_numbers;
+	END //
+DELIMITER ;    
+CALL divisible_15_33(1, 1000);
